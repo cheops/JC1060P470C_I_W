@@ -1,0 +1,183 @@
+dependencies:
+  chmorgan/esp-audio-player:
+    component_hash: c8ac1998e9af863bc41b57e592f88d1a5791a0f891485122336ddabbf7a65033
+    dependencies:
+    - name: idf
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=5.0'
+    - name: chmorgan/esp-libhelix-mp3
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=1.0.0,<2.0.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.0.7
+  chmorgan/esp-file-iterator:
+    component_hash: 327091394b9ef5c2cd395a960ab70ae64479e0a8831cbd9925e38895fad93719
+    dependencies:
+    - name: idf
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=4.1.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.0.0
+  chmorgan/esp-libhelix-mp3:
+    component_hash: cbb76089dc2c5749f7b470e2e70aedc44c9da519e04eb9a67d4c7ec275229e53
+    dependencies:
+    - name: idf
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=4.1.0'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.0.3
+  espressif/cmake_utilities:
+    component_hash: 351350613ceafba240b761b4ea991e0f231ac7a9f59a9ee901f751bddc0bb18f
+    dependencies:
+    - name: idf
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=4.1'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 0.5.3
+  espressif/esp32_p4_function_ev_board:
+    component_hash: 1e0436b3d220275d6b7930330b1a9b828fedf0dbc81006531e592b059842641e
+    dependencies:
+    - name: espressif/esp_codec_dev
+      registry_url: https://components.espressif.com
+      require: public
+      version: 1.2.*
+    - name: espressif/esp_lcd_ek79007
+      registry_url: https://components.espressif.com
+      require: private
+      version: 1.*
+    - name: espressif/esp_lcd_ili9881c
+      registry_url: https://components.espressif.com
+      require: private
+      version: 1.*
+    - name: espressif/esp_lcd_touch_gt911
+      registry_url: https://components.espressif.com
+      require: private
+      version: ^1
+    - name: espressif/esp_lvgl_port
+      registry_url: https://components.espressif.com
+      require: public
+      version: ^2
+    - name: idf
+      require: private
+      version: '>=5.3'
+    - name: lvgl/lvgl
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=8,<10'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    targets:
+    - esp32p4
+    version: 4.1.1
+  espressif/esp_codec_dev:
+    component_hash: 014948481bda426cd46714f297fe1891711246c62bea288863a8cc8cf13ef1f0
+    dependencies:
+    - name: idf
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=4.0'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.2.0
+  espressif/esp_lcd_ek79007:
+    component_hash: 4c28dc20ceb8ae467b303b310a430aaf2b932cca98e75fb85d669a6c4b3e1be1
+    dependencies:
+    - name: espressif/cmake_utilities
+      registry_url: https://components.espressif.com
+      require: private
+      version: 0.*
+    - name: idf
+      require: private
+      version: '>=5.3'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    targets:
+    - esp32p4
+    version: 1.0.1
+  espressif/esp_lcd_ili9881c:
+    component_hash: f4f374226b62baf13f735864e8fae58e17c537df34d598e059f6caad4761ef65
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.3'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    targets:
+    - esp32p4
+    version: 1.0.1
+  espressif/esp_lcd_touch:
+    component_hash: 779b4ba2464a3ae85681e4b860caa5fdc35801458c23f3039ee761bae7f442a4
+    dependencies:
+    - name: idf
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=4.4.2'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.1.2
+  espressif/esp_lcd_touch_gt911:
+    component_hash: 145801c24c7ecfa2c43eea0dd5e87fd5bde5653eb9a48d619c7bad60b20a1acf
+    dependencies:
+    - name: espressif/esp_lcd_touch
+      registry_url: https://components.espressif.com
+      require: public
+      version: ^1.1.0
+    - name: idf
+      require: private
+      version: '>=4.4.2'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.1.1~2
+  espressif/esp_lvgl_port:
+    component_hash: 41806031d90c91d50512d6f335f73978a1dd1aa1100ef5db40e189610be991ac
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.4'
+    - name: lvgl/lvgl
+      registry_url: https://components.espressif.com
+      require: public
+      version: '>=8,<10'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 2.4.3
+  idf:
+    source:
+      type: idf
+    version: 5.4.0
+  lvgl/lvgl:
+    component_hash: d7c1ac037ae6e85d94897f807d6e7ba0946a83e720074fc95a4f6241da9f9f53
+    dependencies: []
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 8.4.0
+direct_dependencies:
+- chmorgan/esp-audio-player
+- chmorgan/esp-file-iterator
+- espressif/esp32_p4_function_ev_board
+- idf
+- lvgl/lvgl
+manifest_hash: 9198750fcf3c5d86497c4cf128adcdf5191508f481d55153bbc109e82af7c2fe
+target: esp32p4
+version: 2.0.0
