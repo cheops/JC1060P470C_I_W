@@ -1,0 +1,599 @@
+esphome:
+  name: esp-display-panel
+  friendly_name: esp-display-panel
+  on_boot:
+    - priority: 800
+      then:
+        - logger.log: "Boot: pulsing display reset"
+        - lambda: |-
+            gpio_set_direction(GPIO_NUM_27, GPIO_MODE_OUTPUT);
+            gpio_set_level(GPIO_NUM_27, 0);
+            vTaskDelay(pdMS_TO_TICKS(5));
+            gpio_set_level(GPIO_NUM_27, 1);
+            vTaskDelay(pdMS_TO_TICKS(10));
+            gpio_set_level(GPIO_NUM_27, 0);
+            vTaskDelay(pdMS_TO_TICKS(120));
+        - logger.log: "Boot: display reset done"
+    - priority: -100
+      then:
+        - logger.log: "Boot complete, turning on backlight"
+        - light.turn_on: backlight
+        - lvgl.resume:
+        - lvgl.widget.redraw:
+
+esp32:
+  variant: ESP32P4
+  engineering_sample: true
+  cpu_frequency: 360MHz
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    log_level: INFO
+    advanced:
+      enable_idf_experimental_features: yes
+    sdkconfig_options:
+      CONFIG_SPIRAM_XIP_FROM_PSRAM: "y"
+      CONFIG_SDMMC_HOST_DEFAULT: "y"
+
+esp32_hosted:
+  variant: ESP32C6
+  reset_pin: 54
+  cmd_pin: 19
+  clk_pin: 18
+  d0_pin: 14
+  d1_pin: 15
+  d2_pin: 16
+  d3_pin: 17
+  active_high: true
+
+psram:
+  speed: 200MHz
+#  ignore_not_found: false
+
+preferences:
+  flash_write_interval: 5min
+
+logger:
+  baud_rate: 115200
+  hardware_uart: USB_SERIAL_JTAG
+  level: DEBUG
+  logs:
+    lvgl: WARN
+    wifi: INFO
+    esp-idf: INFO
+    component: INFO
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "Esp-Display-Panel"
+    password: "some_password"
+
+captive_portal:
+
+api:
+  encryption:
+    key: "some_encryption_key"
+  reboot_timeout: 0s
+
+ota:
+  - platform: esphome
+    password: "ota_password"
+
+web_server:
+  port: 80
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: in_heaven
+    servers:
+      - 0.pool.ntp.org
+      - 1.pool.ntp.org
+      - 2.pool.ntp.org
+    on_time:
+      - hours: 2,3,4,5
+        minutes: 5
+        seconds: 0
+        then:
+          - switch.turn_on: switch_antiburn
+      - hours: 2,3,4,5
+        minutes: 35
+        seconds: 0
+        then:
+          - switch.turn_off: switch_antiburn
+
+esp_ldo:
+  - channel: 3
+    voltage: 2.5V
+
+i2c:
+  - id: bus_a
+    sda: GPIO7
+    scl: GPIO8
+    scan: true
+    frequency: 400kHz
+
+i2c_device:
+  - id: i2cdev1
+    address: 0x18
+  - id: i2cdev2
+    address: 0x32
+  - id: i2cdev3
+    address: 0x5D
+
+output:
+  - platform: ledc
+    pin: GPIO23
+    id: backlight_pwm
+    frequency: 100Hz
+    min_power: 0.03
+    zero_means_zero: true
+
+light:
+  - platform: monochromatic
+    output: backlight_pwm
+    name: Backlight
+    id: backlight
+    restore_mode: RESTORE_DEFAULT_ON
+
+display:
+  - platform: mipi_dsi
+    model: CUSTOM
+    id: my_display
+    update_interval: never
+    auto_clear_enabled: false
+    reset_pin: GPIO27
+    dimensions:
+      width: 1024
+      height: 600
+    init_sequence:
+      - [0x30, 0x00]
+      - [0xF7, 0x49,0x61,0x02,0x00]
+      - [0x30, 0x01]
+      - [0x04, 0x0C]
+      - [0x05, 0x00]
+      - [0x06, 0x00]
+      - [0x0B, 0x11]
+      - [0x17, 0x00]
+      - [0x20, 0x04]
+      - [0x1F, 0x05]
+      - [0x23, 0x00]
+      - [0x25, 0x19]
+      - [0x28, 0x18]
+      - [0x29, 0x04]
+      - [0x2A, 0x01]
+      - [0x2B, 0x04]
+      - [0x2C, 0x01]
+      - [0x30, 0x02]
+      - [0x01, 0x22]
+      - [0x03, 0x12]
+      - [0x04, 0x00]
+      - [0x05, 0x64]
+      - [0x0A, 0x08]
+      - [0x0B, 0x0A,0x1A,0x0B,0x0D,0x0D,0x11,0x10,0x06,0x08,0x1F,0x1D]
+      - [0x0C, 0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D]
+      - [0x0D, 0x16,0x1B,0x0B,0x0D,0x0D,0x11,0x10,0x07,0x09,0x1E,0x1C]
+      - [0x0E, 0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D]
+      - [0x0F, 0x16,0x1B,0x0D,0x0B,0x0D,0x11,0x10,0x1C,0x1E,0x09,0x07]
+      - [0x10, 0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D]
+      - [0x11, 0x0A,0x1A,0x0D,0x0B,0x0D,0x11,0x10,0x1D,0x1F,0x08,0x06]
+      - [0x12, 0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D,0x0D]
+      - [0x14, 0x00,0x00,0x11,0x11]
+      - [0x18, 0x99]
+      - [0x30, 0x06]
+      - [0x12, 0x36,0x2C,0x2E,0x3C,0x38,0x35,0x35,0x32,0x2E,0x1D,0x2B,0x21,0x16,0x29]
+      - [0x13, 0x36,0x2C,0x2E,0x3C,0x38,0x35,0x35,0x32,0x2E,0x1D,0x2B,0x21,0x16,0x29]
+      - [0x30, 0x0A]
+      - [0x02, 0x4F]
+      - [0x0B, 0x40]
+      - [0x12, 0x3E]
+      - [0x13, 0x78]
+      - [0x30, 0x0D]
+      - [0x0D, 0x04]
+      - [0x10, 0x0C]
+      - [0x11, 0x0C]
+      - [0x12, 0x0C]
+      - [0x13, 0x0C]
+      - [0x30, 0x00]
+      - [0x11, 0x00]
+      - delay 120ms
+      - [0x29, 0x00]
+      - delay 50ms
+    rotation: 0
+    color_order: RGB
+    color_depth: 16
+    pixel_mode: 16bit
+    hsync_pulse_width: 40
+    hsync_front_porch: 160
+    hsync_back_porch: 160
+    vsync_pulse_width: 10
+    vsync_front_porch: 12
+    vsync_back_porch: 23
+    pclk_frequency: 58MHz
+    lanes: 2
+    lane_bit_rate: 550Mbps
+    byte_order: little_endian
+
+touchscreen:
+  - platform: gt911
+    id: touchscreen_
+    display: my_display
+    address: 0x5D
+    reset_pin: GPIO22
+    interrupt_pin: GPIO21
+    transform:
+      swap_xy: false
+      mirror_x: false
+      mirror_y: false
+    on_release:
+      - if:
+          condition: lvgl.is_paused
+          then:
+            - logger.log: "LVGL resuming"
+            - lvgl.resume:
+            - lvgl.widget.redraw:
+            - light.turn_on: backlight
+
+lvgl:
+  byte_order: little_endian
+  displays:
+    - my_display
+  touchscreens:
+    - touchscreen_
+  on_idle:
+    timeout: !lambda "return (id(display_timeout).state * 1000);"
+    then:
+      - logger.log: "LVGL is idle"
+      - light.turn_off: backlight
+      - lvgl.pause:
+  pages:
+    - id: main_page
+      widgets:
+        - meter:
+            id: power_meter
+            x: 312
+            y: 50
+            width: 400
+            height: 400
+            indicator:
+              bg_opa: transp
+            scales:
+              - range_from: -5000
+                range_to: 5000
+                angle_range: 270
+                rotation: 135
+                ticks:
+                  count: 11
+                  length: 20
+                  width: 2
+                  color: 0x000000
+                  major:
+                    stride: 0
+                    length: 20
+                    width: 3
+                    color: 0x000000
+                    label_gap: 20
+                    
+                indicators:
+                  - arc:
+                      id: arc_green
+                      color: 0x00FF00
+                      width: 20
+                      start_value: 0
+                      end_value: 6000
+                  - arc:
+                      id: arc_yellow
+                      color: 0xFFFF00
+                      width: 20
+                      start_value: -3113
+                      end_value: 0
+                  - arc:
+                      id: arc_orange
+                      color: 0xFF8800
+                      width: 20
+                      start_value: -4191
+                      end_value: -3113
+                  - arc:
+                      id: arc_red
+                      color: 0xFF0000
+                      width: 20
+                      start_value: -5500
+                      end_value: -4191
+                  - line:
+                      id: power_needle
+                      color: 0x000000
+                      width: 8
+                      length: 65
+                      radial_offset: 120
+                      value: -500
+        - obj:
+            x: 372
+            y: 110
+            width: 280
+            height: 280
+            radius: 140
+            bg_color: 0xF0F0F0
+            bg_opa: 80%
+            border_width: 2
+            border_color: 0xCCCCCC
+        - label:
+            id: power_label
+            x: 362
+            y: 245
+            width: 300
+            text_align: CENTER
+            text: "-.--- kW"
+            text_font: MONTSERRAT_48
+        - label:
+            x: 362
+            y: 185
+            width: 300
+            text_align: CENTER
+            text: "Current Power"
+            text_font: MONTSERRAT_28
+
+        - button:
+            id: stop_button
+            x: 20
+            y: 20
+            width: 240
+            height: 60
+            text: "\uF04D Stop"
+            text_align: CENTER
+            text_font: MONTSERRAT_28
+            on_click:
+              - homeassistant.service:
+                  service: media_player.media_stop
+                  data:
+                    entity_id: media_player.esp_display_panel_speaker_media_player
+        - button:
+            id: play_mnm_button
+            x: 20
+            y: 90
+            width: 240
+            height: 60
+            text: "\uF04B MNM"
+            text_align: CENTER
+            text_font: MONTSERRAT_28
+            on_click:
+              - homeassistant.service:
+                  service: media_player.play_media
+                  data:
+                    entity_id: media_player.esp_display_panel_speaker_media_player
+                    media_content_id: media-source://radio_browser/961957e7-0601-11e8-ae97-52543be04c81
+                    media_content_type: audio/mpeg
+
+        - button:
+            id: play_tmlr_button
+            x: 20
+            y: 160
+            width: 240
+            height: 60
+            text: "\uF04B TML radio"
+            text_align: CENTER
+            text_font: MONTSERRAT_28
+            on_click:
+              - homeassistant.service:
+                  service: media_player.play_media
+                  data:
+                    entity_id: media_player.esp_display_panel_speaker_media_player
+                    media_content_id: media-source://radio_browser/9e31c4e7-03b6-4a80-a4e2-5977b023d32c
+                    media_content_type: audio/aac
+
+        - button:
+            id: play_vrt_news_button
+            x: 20
+            y: 230
+            width: 240
+            height: 60
+            text: "\uF04B VRT News"
+            text_font: MONTSERRAT_28
+            on_click:
+              - homeassistant.service:
+                  service: media_player.play_media
+                  data:
+                    entity_id: media_player.esp_display_panel_speaker_media_player
+                    media_content_id: media-source://radio_browser/39e4f088-3af2-4e7f-8276-9fdbb4ae63ca
+                    media_content_type: audio/mpeg
+
+        - slider:
+            id: slider_media_player
+            x: 20
+            y: 300
+            width: 30
+            height: 220
+            pad_all: 8
+            min_value: 0
+            max_value: 100
+            adv_hittest: true
+            on_value:
+              - homeassistant.action:
+                  action: media_player.volume_set
+                  data:
+                    entity_id: media_player.esp_display_panel_speaker_media_player
+                    volume_level: !lambda return (x / 100);
+
+
+number:
+  - platform: template
+    name: LVGL Screen timeout
+    optimistic: true
+    id: display_timeout
+    unit_of_measurement: "s"
+    initial_value: 45
+    restore_value: true
+    min_value: 10
+    max_value: 180
+    step: 5
+    mode: box
+
+audio_dac:
+  - platform: es8311
+    id: es8311_dac
+    bits_per_sample: 16bit
+    sample_rate: 48000
+    use_microphone: True
+
+i2s_audio:
+  - id: i2s_output
+    i2s_lrclk_pin: GPIO10
+    i2s_bclk_pin: GPIO12
+    i2s_mclk_pin: GPIO13
+
+speaker:
+  - platform: i2s_audio
+    i2s_audio_id: i2s_output
+    id: p4_speaker
+    i2s_dout_pin: GPIO9
+    dac_type: external
+    sample_rate: 48000
+    bits_per_sample: 16bit
+    channel: mono
+    audio_dac: es8311_dac
+  - platform: mixer
+    id: mixer_speaker_id
+    output_speaker: p4_speaker
+    num_channels: 1
+    source_speakers:
+      - id: announcement_spk_mixer_input
+      - id: media_spk_mixer_input
+  - platform: resampler
+    id: media_spk_resampling_input
+    output_speaker: media_spk_mixer_input
+  - platform: resampler
+    id: announcement_spk_resampling_input
+    output_speaker: announcement_spk_mixer_input
+
+media_player:
+  - platform: speaker
+    name: "Speaker Media Player"
+    id: speaker_media_player_id
+    media_pipeline:
+      speaker: media_spk_resampling_input
+    announcement_pipeline:
+      speaker: announcement_spk_resampling_input
+    on_play:
+      - delay: 2000ms
+      - switch.turn_on: speaker_enable
+      #- delay: 100ms
+    on_idle:
+      #- delay: 500ms
+      - switch.turn_off: speaker_enable
+    on_announcement:
+      - delay: 2000ms
+      - switch.turn_on: speaker_enable
+
+
+microphone:
+  - platform: i2s_audio
+    id: p4_microphone
+    i2s_din_pin: GPIO11
+    sample_rate: 48000
+    bits_per_sample: 16bit
+    adc_type: external
+
+
+switch:
+  - platform: gpio
+    name: "Speaker Enable"
+    id: speaker_enable
+    pin: GPIO20
+    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: template
+    name: Antiburn
+    id: switch_antiburn
+    icon: mdi:television-shimmer
+    optimistic: true
+    entity_category: "config"
+    turn_on_action:
+      - logger.log: "Starting Antiburn"
+      - if:
+          condition: lvgl.is_paused
+          then:
+            - lvgl.resume:
+            - lvgl.widget.redraw:
+      - lvgl.pause:
+          show_snow: true
+    turn_off_action:
+      - logger.log: "Stopping Antiburn"
+      - lvgl.resume:
+      - lvgl.widget.redraw:
+
+http_request:
+
+update:
+  - platform: esp32_hosted
+    name: esp32_hosted_c6
+    type: http
+    source: https://esphome.github.io/esp-hosted-firmware/manifest/esp32c6.json
+    update_interval: never
+
+sensor:
+  - platform: homeassistant
+    id: current_power
+    entity_id: sensor.calculated_current_power
+
+    on_value:
+      then:
+        - lvgl.indicator.update:
+            id: power_needle
+            value: !lambda "return id(current_power).state * 1000.0f;"
+        - lvgl.label.update:
+            id: power_label
+            text: !lambda |-
+              char buf[16];
+              snprintf(buf, sizeof(buf), "%.3f kW", id(current_power).state);
+              return std::string(buf);
+
+  - platform: homeassistant
+    id: max_demand_month
+    entity_id: sensor.p1_monitor_maximum_demand_running_month
+    on_value:
+      then:
+        - lambda: |-
+            if (isnan(id(max_demand_month).state) || 
+                isnan(id(max_demand_13months).state)) return;
+            
+            float thresh1 = id(max_demand_month).state * 1000.0f;
+            float thresh2 = id(max_demand_13months).state * 1000.0f;
+            float low_thresh = std::min(thresh1, thresh2);
+            float high_thresh = std::max(thresh1, thresh2);
+            float arc_max = 5000.0f;
+
+            // Update arc zones
+            lv_scale_section_set_range(id(arc_green), 0, (int32_t)arc_max);
+            lv_scale_section_set_range(id(arc_yellow), (int32_t)-low_thresh, 0);
+            lv_scale_section_set_range(id(arc_orange), (int32_t)-high_thresh, (int32_t)-low_thresh);
+            lv_scale_section_set_range(id(arc_red), (int32_t)-arc_max, (int32_t)-high_thresh);
+
+  - platform: homeassistant
+    id: max_demand_13months
+    entity_id: sensor.p1_monitor_maximum_demand_last_13_months
+    on_value:
+      then:
+        - lambda: |-
+            if (isnan(id(max_demand_month).state) || 
+                isnan(id(max_demand_13months).state)) return;
+            
+            float thresh1 = id(max_demand_month).state * 1000.0f;
+            float thresh2 = id(max_demand_13months).state * 1000.0f;
+            float low_thresh = std::min(thresh1, thresh2);
+            float high_thresh = std::max(thresh1, thresh2);
+            float arc_max = 5000.0f;
+
+            // Update arc zones
+            lv_scale_section_set_range(id(arc_green), 0, (int32_t)arc_max);
+            lv_scale_section_set_range(id(arc_yellow), (int32_t)-low_thresh, 0);
+            lv_scale_section_set_range(id(arc_orange), (int32_t)-high_thresh, (int32_t)-low_thresh);
+            lv_scale_section_set_range(id(arc_red), (int32_t)-arc_max, (int32_t)-high_thresh);
+
+  - platform: homeassistant
+    id: media_player_volume
+    entity_id: media_player.esp_display_panel_speaker_media_player
+    attribute: volume_level
+    on_value:
+      - lvgl.slider.update:
+          id: slider_media_player
+          value: !lambda return (x * 100);
