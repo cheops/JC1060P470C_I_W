@@ -13,6 +13,9 @@ This repository is a work in progress to fix these examples.
 The file `1-Demo/Demo_IDF/examples/readme/readme.txt` explains the changes to be done to the standard expressif examples to support this hardware.
 
 ## working examples
+### ESPHome
+a configuration in `esp-display-panel.yaml`
+
 ### 1-Demo/Demo_IDF/examples/lvgl_demo_v9
 Contrary to what the README in this folder tells, the firmware is adapted to run on the JC1060P470_P4 hardware (not the espressif devkit).  
 I updated the managed component to the versions available at 06/03/2025
